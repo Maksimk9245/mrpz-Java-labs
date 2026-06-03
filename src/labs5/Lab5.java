@@ -1,117 +1,97 @@
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+package labs5;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-class Notebook {
-    private String ownerName;
-    private List<DateRecord> records;
+class Payment {
+    private String paymentId;
+    private String payerName;
+    private Cart cart;
+    private boolean isProcessed;
 
-    public Notebook(String ownerName) {
-        this.ownerName = ownerName;
-        this.records = new ArrayList<>();
-        System.out.println("[СИСТЕМА] Створено новий блокнот для користувача: " + ownerName);
+    public Payment(String paymentId, String payerName) {
+        this.paymentId = paymentId;
+        this.payerName = payerName;
+        this.cart = this.new Cart();
+        this.isProcessed = false;
+        System.out.println("[СИСТЕМА] Створено новий платіж #" + paymentId + " для клієнта: " + payerName);
     }
 
-    public class DateRecord {
-        private String date;
-        private List<String> events;
+    public Cart getCart() {
+        return cart;
+    }
 
-        public DateRecord(String date) {
-            this.date = date;
-            this.events = new ArrayList<>();
+    public void processPayment() {
+        if (cart.isEmpty()) {
+            System.out.println("[ПОМИЛКА] Неможливо провести платіж: кошик порожній!");
+            return;
+        }
+        isProcessed = true;
+        System.out.println("[СИСТЕМА] Платіж #" + paymentId + " успішно проведено на суму: " + cart.getTotalPrice() + " грн.");
+    }
+
+    public void displayPaymentInfo() {
+        System.out.println("\n=== Деталі платежу ===");
+        System.out.println("ID платежу: " + paymentId);
+        System.out.println("Платник: " + payerName);
+        System.out.println("Статус: " + (isProcessed ? "Оплачено" : "Очікує оплати"));
+        cart.displayCart();
+        System.out.println("======================\n");
+    }
+
+    public class Cart {
+        private List<String> itemNames;
+        private List<Double> itemPrices;
+
+        public Cart() {
+            this.itemNames = new ArrayList<>();
+            this.itemPrices = new ArrayList<>();
         }
 
-        public void addEvent(String eventDescription) {
-            events.add(eventDescription);
-            System.out.println("[УСПІХ] Подію додано до дати " + date);
+        public void addItem(String name, double price) {
+            itemNames.add(name);
+            itemPrices.add(price);
+            System.out.println("[УСПІХ] Товар '" + name + "' додано до кошика. Ціна: " + price + " грн.");
         }
 
-        public String getDate() {
-            return date;
+        public boolean isEmpty() {
+            return itemNames.isEmpty();
         }
 
-        public void displayRecord() {
-            System.out.println("  📅 Дата: " + date);
-            if (events.isEmpty()) {
-                System.out.println("    Подій немає.");
+        public double getTotalPrice() {
+            double total = 0;
+            for (double price : itemPrices) {
+                total += price;
+            }
+            return total;
+        }
+
+        public void displayCart() {
+            System.out.println("--- Кошик товарів ---");
+            if (isEmpty()) {
+                System.out.println("  Кошик порожній.");
             } else {
-                System.out.println("    Події:");
-                for (int i = 0; i < events.size(); i++) {
-                    System.out.println("      " + (i + 1) + ". " + events.get(i));
+                for (int i = 0; i < itemNames.size(); i++) {
+                    System.out.println("  " + (i + 1) + ". " + itemNames.get(i) + " - " + itemPrices.get(i) + " грн.");
+                }
+                System.out.println("  Загальна сума: " + getTotalPrice() + " грн.");
+            }
+            System.out.println("---------------------");
+        }
+
+        public void searchItem(String keyword) {
+            System.out.println("\n[*] Пошук товару за ключовим словом: '" + keyword + "'...");
+            boolean found = false;
+            for (int i = 0; i < itemNames.size(); i++) {
+                if (itemNames.get(i).toLowerCase().contains(keyword.toLowerCase())) {
+                    System.out.println("[ЗНАЙДЕНО] Товар: " + itemNames.get(i) + " | Ціна: " + itemPrices.get(i) + " грн.");
+                    found = true;
                 }
             }
-        }
-
-        public List<String> getEvents() {
-            return events;
-        }
-    }
-
-    public DateRecord addDateRecord(String date) {
-        for (DateRecord record : records) {
-            if (record.getDate().equals(date)) {
-                return record;
+            if (!found) {
+                System.out.println("[-] Товарів із назвою '" + keyword + "' не знайдено.");
             }
-        }
-
-        DateRecord newRecord = this.new DateRecord(date);
-        records.add(newRecord);
-        System.out.println("[СИСТЕМА] Створено новий запис для дати: " + date);
-        return newRecord;
-    }
-
-    public void displayNotebook() {
-        System.out.println("\n=== Блокнот користувача: " + ownerName + " ===");
-        if (records.isEmpty()) {
-            System.out.println("Блокнот порожній.");
-        } else {
-            for (DateRecord record : records) {
-                record.displayRecord();
-            }
-        }
-        System.out.println("====================================\n");
-    }
-
-    public void searchByDate(String targetDate) {
-        System.out.println("\n[*] Пошук подій за датою: " + targetDate + "...");
-        boolean found = false;
-        for (DateRecord record : records) {
-            if (record.getDate().equals(targetDate)) {
-                System.out.println("[ЗНАЙДЕНО] Результати пошуку:");
-                record.displayRecord();
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            System.out.println("[-] Записів на дату " + targetDate + " не знайдено.");
-        }
-    }
-
-    public void saveToFile(String filePath) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
-            writer.println("=== Блокнот користувача: " + ownerName + " ===");
-            if (records.isEmpty()) {
-                writer.println("Блокнот порожній.");
-            } else {
-                for (DateRecord record : records) {
-                    writer.println("  Дата: " + record.getDate());
-                    if (record.getEvents().isEmpty()) {
-                        writer.println("    Подій немає.");
-                    } else {
-                        writer.println("    Події:");
-                        for (int i = 0; i < record.getEvents().size(); i++) {
-                            writer.println("      " + (i + 1) + ". " + record.getEvents().get(i));
-                        }
-                    }
-                }
-            }
-            System.out.println("[УСПІХ] Дані збережено у файл: " + filePath);
-        } catch (IOException e) {
-            System.out.println("[ПОМИЛКА] Не вдалося зберегти у файл: " + e.getMessage());
         }
     }
 }
@@ -120,19 +100,22 @@ public class Lab5 {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("=== Лабораторна робота №5 ===");
-        System.out.print("Введіть ім'я власника блокнота: ");
+        System.out.println("=== Лабораторна робота №5 (Варіант 2) ===");
+        System.out.print("Введіть ваше ім'я (Платник): ");
         String name = scanner.nextLine();
 
-        Notebook myNotebook = new Notebook(name);
+        System.out.print("Введіть ID платежу (наприклад, INV-001): ");
+        String id = scanner.nextLine();
+
+        Payment payment = new Payment(id, name);
         boolean running = true;
 
         while (running) {
             System.out.println("\nОберіть дію:");
-            System.out.println("1. Додати подію на певну дату");
-            System.out.println("2. Вивести весь блокнот");
-            System.out.println("3. Знайти події за датою");
-            System.out.println("4. Зберегти у файл");
+            System.out.println("1. Додати товар до кошика");
+            System.out.println("2. Переглянути платіж та кошик");
+            System.out.println("3. Знайти товар у кошику");
+            System.out.println("4. Провести оплату");
             System.out.println("0. Вийти");
             System.out.print("Ваш вибір: ");
 
@@ -140,26 +123,26 @@ public class Lab5 {
 
             switch (choice) {
                 case "1":
-                    System.out.print("Введіть дату (наприклад, 12.10.2023): ");
-                    String date = scanner.nextLine();
-                    Notebook.DateRecord record = myNotebook.addDateRecord(date);
-
-                    System.out.print("Введіть опис події: ");
-                    String event = scanner.nextLine();
-                    record.addEvent(event);
+                    System.out.print("Введіть назву товару: ");
+                    String itemName = scanner.nextLine();
+                    System.out.print("Введіть ціну товару (грн): ");
+                    try {
+                        double price = Double.parseDouble(scanner.nextLine());
+                        payment.getCart().addItem(itemName, price);
+                    } catch (NumberFormatException e) {
+                        System.out.println("[ПОМИЛКА] Невірний формат ціни! Будь ласка, введіть число (використовуйте крапку для дробових, наприклад 15.5).");
+                    }
                     break;
                 case "2":
-                    myNotebook.displayNotebook();
+                    payment.displayPaymentInfo();
                     break;
                 case "3":
-                    System.out.print("Введіть дату для пошуку: ");
-                    String searchDate = scanner.nextLine();
-                    myNotebook.searchByDate(searchDate);
+                    System.out.print("Введіть назву товару для пошуку: ");
+                    String searchKeyword = scanner.nextLine();
+                    payment.getCart().searchItem(searchKeyword);
                     break;
                 case "4":
-                    System.out.print("Введіть шлях до вихідного файлу: ");
-                    String filePath = scanner.nextLine();
-                    myNotebook.saveToFile(filePath);
+                    payment.processPayment();
                     break;
                 case "0":
                     running = false;
