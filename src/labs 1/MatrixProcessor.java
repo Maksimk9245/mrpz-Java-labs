@@ -2,7 +2,7 @@ import java.util.Random;
 
 public class MatrixProcessor {
     public static void main(String[] args) {
-        System.out.println("Розробник: Балатський М. О.");
+        System.out.println("Розробник: Балацький М. О.");
         System.out.println("---------------------------");
 
         int rows = 3;
